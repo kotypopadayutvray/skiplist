@@ -9,7 +9,6 @@ type SkipList struct {
 	MaxLevel int
 	Header *node.Node
 	Probability float64
-	CurrentLevel int
 }
 
 func NewSkipList(maxLevel int, prob float64) *SkipList {
@@ -20,7 +19,6 @@ func NewSkipList(maxLevel int, prob float64) *SkipList {
 		MaxLevel: maxLevel,
 		Header: header,
 		Probability: prob,
-		CurrentLevel: 0,
 	}
 }
 

@@ -1,15 +1,15 @@
-package skip_list
+package skiplist
 
 import (
 	"sort"
 	"testing"
 )
 
-const max_level = 5
+const maxLevel = 5
 const prob = 1.0
 
 func TestNewSkipList(t *testing.T) {
-	sl := NewSkipList(max_level, prob)
+	sl := NewSkipList(maxLevel, prob)
 	t.Run("sl is not nil", func(t *testing.T) {
 		if sl == nil {
 			t.Errorf("New skip list was not created!")
@@ -20,9 +20,9 @@ func TestNewSkipList(t *testing.T) {
 			t.Errorf("sl.Header was not created!")
 		}
 	})
-	t.Run("sl.MaxLevel = max_level", func(t *testing.T) {
-		if sl.MaxLevel != max_level {
-			t.Errorf("MaxLevel is incorrect, expected: %d, got: %d", max_level, sl.MaxLevel)
+	t.Run("sl.MaxLevel = maxLevel", func(t *testing.T) {
+		if sl.MaxLevel != maxLevel {
+			t.Errorf("MaxLevel is incorrect, expected: %d, got: %d", maxLevel, sl.MaxLevel)
 		}
 	})
 	t.Run("sl.Probability = prob", func(t *testing.T) {
@@ -35,38 +35,157 @@ func TestNewSkipList(t *testing.T) {
 
 func TestInsert(t *testing.T) {
 	t.Run("should insert all values", func(t *testing.T) {
-		values_to_insert := []int { -4, 3, 2, 10, 51, -78, 6, 0 }
-		sl := NewSkipList(max_level, prob)
-		for _, value := range values_to_insert {
+		valuesToInsert := []int{-4, 3, 2, 10, 51, -78, 6, 0}
+		sl := NewSkipList(maxLevel, prob)
+		for _, value := range valuesToInsert {
 			sl.Insert(value)
 		}
-		count_inserted_elements := 0
-		current_element := sl.Header.Forward[0]
-		for current_element != nil {
-			current_element = current_element.Forward[0]
-			count_inserted_elements++
+		countInsertedElements := 0
+		currentElement := sl.Header.Forward[0]
+		for currentElement != nil {
+			currentElement = currentElement.Forward[0]
+			countInsertedElements++
 		}
-		count_values_to_insert := len(values_to_insert)
-		if count_inserted_elements != count_values_to_insert {
-			t.Errorf("Wrong count of inserted elements. Expected: %d, got: %d", count_values_to_insert, count_inserted_elements)
+		countValuesToInsert := len(valuesToInsert)
+		if countInsertedElements != countValuesToInsert {
+			t.Errorf("Wrong count of inserted elements. Expected: %d, got: %d", countValuesToInsert, countInsertedElements)
 		}
 	})
 	t.Run("should insert in correct sequence", func(t *testing.T) {
-		values_to_insert := []int { -4, 3, 2, 10, 51, -78, 6, 0 }
-		sorted_values := make([]int, len(values_to_insert))
-		copy(sorted_values, values_to_insert)
-		sort.Ints(sorted_values)
-		sl := NewSkipList(max_level, prob)
-		for _, value := range values_to_insert {
+		valuesToInsert := []int{-4, 3, 2, 10, 51, -78, 6, 0}
+		sortedValues := make([]int, len(valuesToInsert))
+		copy(sortedValues, valuesToInsert)
+		sort.Ints(sortedValues)
+		sl := NewSkipList(maxLevel, prob)
+		for _, value := range valuesToInsert {
 			sl.Insert(value)
 		}
 		index := 0
-		current_element := sl.Header.Forward[0]
-		for current_element != nil {
-			if current_element.Key != sorted_values[index] {
-				t.Errorf("Got wrong value. Expected: %d, got: %d", sorted_values[index], current_element.Key)
+		currentElement := sl.Header.Forward[0]
+		for currentElement != nil {
+			if currentElement.Key != sortedValues[index] {
+				t.Errorf("Got wrong value. Expected: %d, got: %d", sortedValues[index], currentElement.Key)
 			}
-			current_element = current_element.Forward[0]
+			currentElement = currentElement.Forward[0]
+			index++
+		}
+	})
+	t.Run("should not insert existing element", func(t *testing.T) {
+		sl := NewSkipList(maxLevel, prob)
+		sl.Insert(3)
+		// Try to insert existing element
+		if sl.Insert(3) {
+			t.Errorf("Inserted existing element")
+		}
+		countElements := 0
+		expectedCountElements := 1
+		el := sl.Header.Forward[0]
+		for el != nil {
+			el = el.Forward[0]
+			countElements++
+		}
+		if countElements != expectedCountElements {
+			t.Errorf("Count of elements wrong. Expected: %d, got: %d", expectedCountElements, countElements)
+		}
+	})
+}
+
+func TestDelete(t *testing.T) {
+	t.Run("Delete element in the empty list", func(t *testing.T) {
+		sl := NewSkipList(maxLevel, prob)
+		if sl.Delete(1) {
+			t.Errorf("Successfully delete not existing element")
+		}
+	})
+	t.Run("Delete one element in the begin of list", func(t *testing.T) {
+		sl := NewSkipList(maxLevel, prob)
+		elementsToInsert := [5]int{1, 2, 3, 4, 5}
+		for _, key := range elementsToInsert {
+			sl.Insert(key)
+		}
+		// Check deleting
+		if !sl.Delete(1) {
+			t.Errorf("Don't delete the first element")
+		}
+		// Check elements
+		index := 1
+		el := sl.Header.Forward[0]
+		for el != nil {
+			expectedElement := elementsToInsert[index]
+			if el.Key != expectedElement {
+				t.Errorf("The sequence after delete element is incorrect, expected: %d, got: %d", expectedElement, el.Key)
+			}
+			el = el.Forward[0]
+			index++
+		}
+	})
+	t.Run("Delete one element in the end of list", func(t *testing.T) {
+		sl := NewSkipList(maxLevel, prob)
+		elementsToInsert := [5]int{1, 2, 3, 4, 5}
+		for _, key := range elementsToInsert {
+			sl.Insert(key)
+		}
+		// Check deleting
+		if !sl.Delete(5) {
+			t.Errorf("Don't delete the first element")
+		}
+		// Check elements
+		index := 0
+		el := sl.Header.Forward[0]
+		for el != nil {
+			expectedElement := elementsToInsert[index]
+			if el.Key != expectedElement {
+				t.Errorf("The sequence after delete element is incorrect, expected: %d, got: %d", expectedElement, el.Key)
+			}
+			el = el.Forward[0]
+			index++
+		}
+	})
+	t.Run("Delete one element in the middle of list", func(t *testing.T) {
+		sl := NewSkipList(maxLevel, prob)
+		elementsToInsert := [5]int{1, 2, 3, 4, 5}
+		for _, key := range elementsToInsert {
+			sl.Insert(key)
+		}
+		// Check deleting
+		if !sl.Delete(3) {
+			t.Errorf("Don't delete the first element")
+		}
+		// Check elements
+		elementForCheck := [4]int{1, 2, 4, 5}
+		index := 0
+		el := sl.Header.Forward[0]
+		for el != nil {
+			expectedElement := elementForCheck[index]
+			if el.Key != expectedElement {
+				t.Errorf("The sequence after delete element is incorrect, expected: %d, got: %d", expectedElement, el.Key)
+			}
+			el = el.Forward[0]
+			index++
+		}
+	})
+	t.Run("Delete elements in the list", func(t *testing.T) {
+		sl := NewSkipList(maxLevel, prob)
+		elementsToInsert := [10]int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+		for _, key := range elementsToInsert {
+			sl.Insert(key)
+		}
+		elementsToDelete := [4]int{1, 3, 5, 9}
+		for _, key := range elementsToDelete {
+			if !sl.Delete(key) {
+				t.Errorf("Can't delete existing element %d", key)
+			}
+		}
+		// Check elements
+		elementForCheck := [6]int{2, 4, 6, 7, 8, 10}
+		index := 0
+		el := sl.Header.Forward[0]
+		for el != nil {
+			expectedElement := elementForCheck[index]
+			if el.Key != expectedElement {
+				t.Errorf("The sequence after delete element is incorrect, expected: %d, got: %d", expectedElement, el.Key)
+			}
+			el = el.Forward[0]
 			index++
 		}
 	})
